@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Game Về Hệ Điều Hành</title>
+<style>
+/* Đã thay đổi font chữ thành Arial, sans-serif */
+
+:root {
+    --primary-color: #33ccff;
+    --secondary-color: #0a0a0a;
+    --background-color: #0d1117;
+    --text-color: #e6e6e6;
+    --correct-color: #2ecc71; /* Green */
+    --wrong-color: #e74c3c; /* Red */
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif; /* Sử dụng font Arial */
+    background: var(--background-color);
+    color: var(--text-color);
+    min-height: 100vh;
+    overflow-x: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Starry Background Effect */
+.starry-background {
+    position: fixed;
+    inset: 0;
+    background-color: var(--background-color);
+    background-image: radial-gradient(white, rgba(255, 255, 255, .2) 2px, transparent 40px),
+                      radial-gradient(white, rgba(255, 255, 255, .15) 1px, transparent 30px),
+                      radial-gradient(white, rgba(255, 255, 255, .1) 3px, transparent 60px);
+    background-size: 550px 550px, 350px 350px, 250px 250px;
+    animation: star-move 300s linear infinite;
+    z-index: -2;
+}
+
+@keyframes star-move {
+    from {
+        background-position: 0 0, 40px 60px, 130px 270px;
+    }
+    to {
+        background-position: 550px 550px, 390px 610px, 380px 820px;
+    }
+}
+
+.screen {
+    display: none; /* Controlled by JS */
+    flex-direction: column;
+    align-items: center;
+    width: 90%;
+    max-width: 700px;
+    padding: 30px;
+    box-sizing: border-box;
+    border-radius: 20px;
+    background: rgba(13, 17, 23, 0.8);
+    box-shadow: 0 0 40px rgba(51, 204, 255, 0.2);
+    margin: 20px;
+    z-index: 1;
+}
+
+h2 {
+    font-size: clamp(1.8em, 6vw, 3em);
+    color: var(--primary-color);
+    text-shadow: 0 0 15px var(--primary-color);
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+/* Start Screen Specifics */
+#startScreen {
+    display: flex; /* Show by default until JS takes over */
+    align-items: stretch;
+}
+#startContent {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Game Screen Specifics */
+#gameHeader {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 20px;
+    font-weight: bold;
+    color: var(--primary-color);
+    font-size: 1.1em;
+}
+
+#question {
+    font-size: 1.5em;
+    margin-bottom: 25px;
+    text-align: center;
+    color: var(--text-color);
+    width: 100%;
+}
+
+.answers {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 15px;
+    width: 100%;
+}
+
+.answer {
+    background: rgba(50, 50, 60, 0.4);
+    border: 2px solid var(--primary-color);
+    padding: 15px 20px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    text-align: center;
+    font-size: 1.1em;
+    font-weight: 700;
+}
+
+.answer:hover {
+    background: rgba(51, 204, 255, 0.2);
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(51, 204, 255, 0.5);
+}
+
+/* Button Styling */
+button {
+    background: var(--primary-color);
+    border: none;
+    color: var(--secondary-color);
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background 0.3s, transform 0.1s;
+    margin: 5px;
+    box-shadow: 0 4px 15px rgba(51, 204, 255, 0.5);
+}
+
+button:hover {
+    background: #66e6ff;
+    transform: translateY(-1px);
+}
+
+/* Leaderboard */
+#leaderboard {
+    margin-top: 20px;
+    width: 100%;
+    max-width: 400px;
+    background: rgba(0, 0, 20, 0.8);
+    border: 2px solid var(--primary-color);
+    border-radius: 15px;
+    padding: 15px;
+    font-size: 0.9em;
+    box-shadow: 0 0 15px var(--primary-color);
+}
+
+#leaderboard h3 {
+    color: var(--primary-color);
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 1.2em;
+    text-shadow: none;
+}
+
+#leaderboardList {
+    list-style: none;
+    padding: 0;
+}
+
+#leaderboardList li {
+    padding: 8px 0;
+    border-bottom: 1px dashed rgba(51, 204, 255, 0.5);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#leaderboardList li:last-child {
+    border-bottom: none;
+}
+
+/* New Player Name Input Styling */
+#playerSetupPanel {
+    margin-bottom: 20px;
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+}
+
+#playerNameInputStart {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    border-radius: 5px;
+    border: 1px solid var(--primary-color);
+    /* Input field on dark background should have light text */
+    color: var(--secondary-color); /* Kept consistent with end screen, but changed to white temporarily for visibility */
+    background: #e6e6e6; /* Light background for contrast */
+    box-sizing: border-box;
+    font-weight: 700;
+}
+
+/* End Screen */
+#endScreen h2 {
+    font-size: 2.5em;
+    margin-bottom: 10px;
+}
+
+#endScoreDisplay {
+    font-size: 3em;
+    font-weight: bold;
+    color: var(--correct-color);
+    text-shadow: 0 0 15px var(--correct-color);
+    margin-bottom: 20px;
+}
+
+#endScreen input {
+    width: 80%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    color: #000;
+}
+
+#endButtons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+/* Message Box for Alerts/Status */
+#messageBox {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #f39c12;
+    color: var(--secondary-color);
+    padding: 10px 20px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    z-index: 3000;
+    opacity: 0;
+    transition: opacity 0.5s, transform 0.5s;
+    font-weight: bold;
+    max-width: 90%;
+}
+
+#messageBox.show {
+    opacity: 1;
+}
+
+/* Modal (Dùng cho kết quả câu hỏi) - Thêm style để hiển thị giữa màn hình */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+.modal-content {
+    background-color: var(--background-color);
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 0 25px var(--primary-color);
+    text-align: center;
+    max-width: 80%;
+}
+.modal-content h2 {
+    margin-top: 0;
+    font-size: 2em;
+    color: var(--primary-color);
+}
+
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .answers {
+        grid-template-columns: 1fr;
+    }
+    .screen {
+        margin: 10px;
+        padding: 15px;
+    }
+    #leaderboard {
+        margin-right: 0;
+    }
+    #endButtons {
+        flex-direction: column;
+    }
+    #gameHeader {
+        flex-direction: column;
+        gap: 5px;
+        align-items: flex-start;
+    }
+}
+</style>
+</head>
+<body>
+
+<div class="starry-background"></div>
+
+<!-- Màn hình BẮT ĐẦU (Start Screen) -->
+<div class="screen" id="startScreen">
+    <div id="startContent">
+        <h2 style="font-size: 3em; margin-bottom: 5px;">Kiểm Tra Kiến Thức Hệ Điều Hành</h2>
+        <p style="color: var(--primary-color); margin-bottom: 20px; font-style: italic;">Bạn sẽ trả lời 26 câu hỏi. Sẵn sàng chứ?</p>
+
+        <!-- INPUT TÊN NGƯỜI CHƠI MỚI -->
+        <div id="playerSetupPanel">
+            <label for="playerNameInputStart" style="font-size: 1.1em; font-weight: bold; color: var(--text-color);">Nhập Tên Phi Hành Gia:</label>
+            <input type="text" id="playerNameInputStart" placeholder="Tên của bạn" value="" maxlength="25">
+        </div>
+        
+        <div id="leaderboard">
+            <h3>Bảng xếp hạng (Top 10)</h3>
+            <p id="leaderboardStatus" style="text-align: center; font-size: 0.8em; color: #aaa;">Đang tải...</p>
+            <ul id="leaderboardList"><li></li></ul>
+        </div>
+        
+        <button id="startButton" style="margin-top: 20px;">Bắt Đầu Chơi</button>
+    </div>
+</div>
+
+
+<!-- Màn hình CHƠI (Game Screen) -->
+<div class="screen" id="gameScreen" style="display: none;">
+    <!-- KHỐI HEADER MỚI: Hiển thị Điểm và Số câu hỏi -->
+    <div id="gameHeader">
+        <p id="currentScore">Điểm: 0</p>
+        <p id="questionCount"></p>
+    </div>
+    
+    <h2 id="question">Câu hỏi hiển thị tại đây</h2>
+    <div class="answers" id="answers"></div>
+</div>
+
+
+<!-- Màn hình KẾT THÚC (End Screen) -->
+<div class="screen" id="endScreen" style="display: none;">
+    <h2 style="color: var(--correct-color);">HOÀN THÀNH NHIỆM VỤ!</h2>
+    <p>Điểm số cuối cùng của bạn:</p>
+    <div id="endScoreDisplay">0</div>
+
+    <p style="margin-top: 15px;">Vui lòng nhập tên để lưu điểm lên bảng xếp hạng:</p>
+    <input type="text" id="playerNameInputEnd" placeholder="Tên phi hành gia" style="text-align: center;">
+
+    <button id="saveScoreButton">Lưu Điểm</button>
+
+    <div id="endButtons">
+        <button id="replayButton" style="background-color: var(--primary-color);">Chơi Lại</button>
+        <button id="homeButton" style="background-color: #666;">Về Màn Hình Bắt Đầu</button>
+    </div>
+</div>
+
+
+<!-- Modal (Dùng cho kết quả câu hỏi) -->
+<div class="modal-overlay" id="resultPopup" style="display: none;">
+  <div class="modal-content">
+    <h2 id="resultText"></h2>
+    <button id="continueButton">Tiếp tục</button>
+  </div>
+</div>
+
+<!-- Message Box for Alerts/Status -->
+<div id="messageBox"></div>
+
+<script type="module">
+// Modular Firebase V9 Imports (Chỉ được dùng nếu firebaseInitialized là true)
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, addDoc, onSnapshot, collection, query, limit, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+// Global Variables
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+// Lấy cấu hình Firebase. Nếu không có, gán null để kiểm tra rõ ràng.
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null; 
+const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+// Initialization
+let db;
+let auth;
+let userId = null;
+let isAuthReady = false;
+let firebaseInitialized = false; // Cờ theo dõi trạng thái Firebase
+
+// ===== DOM Elements =====
+const startScreen = document.getElementById('startScreen');
+const gameScreen = document.getElementById('gameScreen');
+const endScreen = document.getElementById('endScreen');
+
+const qEl = document.getElementById("question");
+const ansEl = document.getElementById("answers");
+const resultPopup = document.getElementById("resultPopup");
+const resultText = document.getElementById("resultText");
+const endScoreDisplay = document.getElementById("endScoreDisplay");
+const playerNameInputStart = document.getElementById('playerNameInputStart'); 
+const playerNameInputEnd = document.getElementById('playerNameInputEnd');
+const leaderboardStatus = document.getElementById("leaderboardStatus");
+// Cập nhật DOM element cho điểm số
+const questionCountEl = document.getElementById("questionCount");
+const currentScoreEl = document.getElementById("currentScore");
+
+
+// Lấy các nút cần gán sự kiện
+const startButton = document.getElementById('startButton');
+const saveScoreButton = document.getElementById('saveScoreButton');
+const replayButton = document.getElementById('replayButton');
+const homeButton = document.getElementById('homeButton');
+const continueButton = document.getElementById('continueButton');
+
+
+// ===== Game State (Bộ câu hỏi cố định) - Dữ liệu đã được kiểm tra và tích hợp =====
+let defaultQuestions = [
+    // A. TRẮC NGHIỆM
+    { q: "Hệ điều hành là gì?", a: ["Phần cứng máy tính", "Thiết bị ngoại vi", "Phần mềm nền tảng điều khiển phần cứng và cung cấp giao diện cho người dùng", "Phần mềm ứng dụng"], correct: 2 },
+    { q: "Ai là người phát triển hệ điều hành LINUX?", a: ["Bill Gates", "Steve Jobs", "Mark Zuckerberg", "Linus Torvalds"], correct: 3 },
+    { q: "Hệ điều hành nào là mã nguồn mở, miễn phí?", a: ["Windows XP", "Linux", "macOS", "Android"], correct: 1 },
+    { q: "Cơ chế 'plug & play' có tác dụng gì?", a: ["Tăng tốc độ xử lý của CPU", "Tự động nhận biết thiết bị ngoại vi khi khởi động", "Tăng dung lượng bộ nhớ", "Hỗ trợ sao lưu dữ liệu"], correct: 1 },
+    { q: "Hệ điều hành Windows 95 nổi bật với đặc điểm nào?", a: ["Giao diện dòng lệnh", "Hỗ trợ cảm ứng", "Có nút Start và thanh Taskbar", "Mã nguồn mở"], correct: 2 },
+    { q: "Em đang phát triển một ứng dụng cơ bản dùng để học trực tuyến trên điện thoại. Hệ điều hành nào phù hợp nhất để kiểm thử?", a: ["Windows XP", "Linux Ubuntu", "Android hoặc iOS", "MSDOS"], correct: 2 },
+    { q: "Một doanh nghiệp muốn kiểm soát hệ thống máy tính nội bộ thì nên chọn hệ điều hành nào?", a: ["iOS", "Android", "Linux", "Windows Home"], correct: 2 },
+    { q: "Chức năng nào không thuộc hệ điều hành?", a: ["Quản lý bộ nhớ", "Quản lý tập tin", "Chạy các phần mềm ứng dụng", "Thiết kế website"], correct: 3 },
+    { q: "Tại sao giao diện đồ họa là một bước tiến lớn trong hệ điều hành?", a: ["Giúp tăng dung lượng ổ cứng", "Giúp người dùng dễ thao tác, thân thiện hơn", "Giúp máy tính chạy nhanh hơn", "Giúp máy tính không cần hệ điều hành"], correct: 1 },
+    { q: "Hệ điều hành đóng vai trò gì khi người dùng muốn lưu tệp vào ổ đĩa USB?", a: ["Giao tiếp với CPU", "Tự động nén tệp", "Quản lý thiết bị và lưu trữ dữ liệu", "Tắt máy tính"], correct: 2 },
+    
+    // B. CÂU HỎI ĐÚNG/SAI (Được chuyển thành MC với 2 lựa chọn: 0=Đúng, 1=Sai)
+    // TÌNH HUỐNG 1: Quản lý tác vụ
+    { q: "Tình huống 1a: Việc ứng dụng bị đơ cho thấy hệ điều hành đã không hoàn thành chức năng quản lí và điều phối tài nguyên.", a: ["Đúng", "Sai"], correct: 1 },
+    { q: "Tình huống 1b: Hệ điều hành vẫn hoạt động bình thường, và điều này được chứng minh bằng việc bạn có thể mở công cụ quản lí tác vụ.", a: ["Đúng", "Sai"], correct: 0 },
+    { q: "Tình huống 1c: Hệ điều hành đã thất bại trong việc đảm bảo mọi ứng dụng hoạt động ổn định và an toàn.", a: ["Đúng", "Sai"], correct: 1 },
+    { q: "Tình huống 1d: Hệ điều hành đã làm tốt vai trò của nó khi cung cấp công cụ để người dùng kiểm soát và chấm dứt tiến trình lỗi.", a: ["Đúng", "Sai"], correct: 0 },
+
+    // TÌNH HUỐNG 2: Không tương thích phần mềm
+    { q: "Tình huống 2a: Hệ điều hành macOS không thể chạy phần mềm kế toán này vì HĐH chỉ tương thích với một số loại phần cứng nhất định, không phải tất cả.", a: ["Đúng", "Sai"], correct: 1 },
+    { q: "Tình huống 2b: Vấn đề nằm ở sự không tương thích giữa phần mềm ứng dụng và hệ điều hành, chứ không phải ở phần cứng của máy tính.", a: ["Đúng", "Sai"], correct: 0 },
+    { q: "Tình huống 2c: Bạn của em có thể giải quyết vấn đề này bằng cách cài đặt HĐH Windows trên máy Mac.", a: ["Đúng", "Sai"], correct: 0 },
+    { q: "Tình huống 2d: Tất cả các phần mềm được viết cho Windows đều có thể chạy trên Linux và macOS vì chúng đều là các hệ điều hành đa nhiệm.", a: ["Đúng", "Sai"], correct: 1 },
+
+    // TÌNH HUỐNG 3: Thao tác tập tin
+    { q: "Tình huống 3a: Để chuyển một tệp tin, An có thể dùng thao tác kéo và thả chuột hoặc dùng tổ hợp phím Ctrl + X (cắt) rồi Ctrl + V (dán).", a: ["Đúng", "Sai"], correct: 0 },
+    { q: "Tình huống 3b: Thao tác Ctrl + C (sao chép) và Ctrl + V (dán) cũng có thể di chuyển tệp, nhưng sẽ giữ lại bản gốc ở vị trí ban đầu.", a: ["Đúng", "Sai"], correct: 1 },
+    { q: "Tình huống 3c: Hành động 'kéo và thả' chỉ có thể dùng để sao chép tệp, không thể dùng để di chuyển.", a: ["Đúng", "Sai"], correct: 1 },
+    { q: "Tình huống 3d: Tên tệp tin hoặc thư mục không được chứa khoảng trắng.", a: ["Đúng", "Sai"], correct: 1 },
+    
+    // TÌNH HUỐNG 4: Tùy biến màn hình nền
+    { q: "Tình huống 4a: Mai có thể thay đổi màn hình nền bằng cách nhấp chuột phải vào một tệp ảnh và chọn 'Set as desktop background'.", a: ["Đúng", "Sai"], correct: 0 },
+    { q: "Tình huống 4b: Sau khi thay đổi màn hình nền, các biểu tượng trên màn hình (desktop icons) sẽ bị xóa.", a: ["Đúng", "Sai"], correct: 1 },
+    { q: "Tình huống 4c: Nếu Mai sử dụng một HĐH khác như Linux (Ubuntu), cô ấy không thể thay đổi màn hình nền vì Linux không hỗ trợ tính năng này.", a: ["Đúng", "Sai"], correct: 1 },
+    { q: "Tình huống 4d: HĐH cho phép người dùng tùy biến màn hình nền, nhưng không cho phép thay đổi hình ảnh đại diện cho các thư mục.", a: ["Đúng", "Sai"], correct: 1 },
+];
+
+let questions = [...defaultQuestions];
+let currentQ = 0;
+let score = 0;
+let currentPlayerName = "Phi Hành Gia Vô Danh"; 
+
+
+// ===== Utility & Firebase Initialization =====
+
+// Utility for Custom Message Box
+function showMessage(msg, type = 'info', duration = 3000) {
+    const msgBox = document.getElementById('messageBox');
+    msgBox.textContent = msg;
+    msgBox.className = 'show';
+    msgBox.style.backgroundColor = type === 'error' ? 'var(--wrong-color)' : (type === 'success' ? 'var(--correct-color)' : '#f39c12');
+    msgBox.style.color = 'var(--secondary-color)';
+
+    setTimeout(() => {
+        msgBox.className = '';
+    }, duration);
+}
+
+// ** CHỨC NĂNG KHỞI TẠO VÀ ĐĂNG NHẬP FIREBASE/LOCAL **
+async function initializeFirebaseAndAuth() {
+    // 1. KIỂM TRA CHẠY CỤC BỘ (Không có Firebase)
+    if (!firebaseConfig || Object.keys(firebaseConfig).length === 0) {
+        console.warn("Lưu ý: Không tìm thấy cấu hình Firebase. Chuyển sang Bảng xếp hạng cục bộ.");
+        firebaseInitialized = false;
+        isAuthReady = true;
+        userId = crypto.randomUUID();
+        loadLocalLeaderboard(); // Tải bảng xếp hạng cục bộ
+        leaderboardStatus.textContent = "Sử dụng Bảng xếp hạng cục bộ (Lưu trên trình duyệt)";
+        showMessage('Chạy cục bộ: Sử dụng Bảng xếp hạng cục bộ (Lưu trên trình duyệt).', 'info', 7000); 
+        return;
+    }
+    
+    // 2. KHỞI TẠO FIREBASE (Nếu có cấu hình)
+    try {
+        const app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+        firebaseInitialized = true;
+        console.log("Firebase đã khởi tạo thành công.");
+    } catch (error) {
+        console.error("Lỗi khởi tạo Firebase:", error);
+        firebaseInitialized = false;
+        isAuthReady = true;
+        userId = crypto.randomUUID();
+        loadLocalLeaderboard(); // Tải bảng xếp hạng cục bộ nếu khởi tạo Firebase lỗi
+        leaderboardStatus.textContent = "Lỗi Firebase. Sử dụng bảng xếp hạng cục bộ.";
+        showMessage('Lỗi khởi tạo Firebase. Chuyển sang Bảng xếp hạng cục bộ.', 'error', 5000);
+        return;
+    }
+
+    // 3. XỬ LÝ ĐĂNG NHẬP
+    try {
+        if (initialAuthToken) {
+            await signInWithCustomToken(auth, initialAuthToken);
+        } else {
+            await signInAnonymously(auth);
+        }
+    } catch (error) {
+        console.error("Lỗi đăng nhập Firebase Auth:", error);
+        showMessage('Lỗi đăng nhập Firebase. Chức năng lưu điểm có thể bị ảnh hưởng.', 'error', 5000);
+    }
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+        if (user) {
+            userId = user.uid;
+        } else {
+            userId = crypto.randomUUID(); 
+        }
+        isAuthReady = true;
+        console.log("Auth Ready. User ID:", userId);
+        if (firebaseInitialized) {
+            listenToLeaderboard(); // Chỉ nghe Firebase khi khởi tạo thành công
+            leaderboardStatus.textContent = "Kết nối Firebase (Toàn cầu)";
+        }
+        unsubscribe();
+    });
+}
+
+// Chạy hàm thiết lập Firebase/Local ngay lập tức
+initializeFirebaseAndAuth();
+
+
+// ===== Screen Management =====
+
+function showStartScreen() {
+    startScreen.style.display = 'flex';
+    gameScreen.style.display = 'none';
+    endScreen.style.display = 'none';
+    
+    // Tải lại bảng xếp hạng (cục bộ hoặc Firebase)
+    if (!firebaseInitialized) {
+        loadLocalLeaderboard(); // Tải lại bảng xếp hạng cục bộ
+    }
+}
+
+function startGame(isReplay = false) {
+    // 1. Lấy và kiểm tra tên người chơi
+    const nameAttempt = playerNameInputStart.value.trim();
+    if (nameAttempt.length === 0) {
+        showMessage("Vui lòng nhập tên phi hành gia của bạn trước khi bắt đầu.", 'error');
+        playerNameInputStart.focus();
+        return;
+    }
+    currentPlayerName = nameAttempt; // Lưu tên người chơi hiện tại
+
+    // Luôn bắt đầu game sau một chút trễ để đảm bảo chuyển màn hình mượt mà
+    setTimeout(() => {
+        currentQ = 0;
+        score = 0;
+        currentScoreEl.textContent = `Điểm: ${score}`; // Đảm bảo điểm hiển thị là 0
+        // Đảo thứ tự câu hỏi để mỗi lần chơi là một trải nghiệm mới
+        questions.sort(() => Math.random() - 0.5); 
+        
+        startScreen.style.display = 'none';
+        gameScreen.style.display = 'flex';
+        endScreen.style.display = 'none';
+        loadQuestion();
+    }, 100); 
+}
+
+function showEndScreen() {
+    startScreen.style.display = 'none';
+    gameScreen.style.display = 'none';
+    endScreen.style.display = 'flex';
+
+    endScoreDisplay.textContent = score;
+    // Đặt tên gợi ý từ tên đã nhập ở màn hình bắt đầu
+    playerNameInputEnd.value = currentPlayerName;
+}
+
+
+// ===== Quiz Logic =====
+
+function loadQuestion() {
+    const totalQ = questions.length;
+    questionCountEl.textContent = `Câu: ${currentQ + 1}/${totalQ}`;
+    currentScoreEl.textContent = `Điểm: ${score}`; // Cập nhật điểm mỗi khi tải câu hỏi
+
+    const q = questions[currentQ];
+    qEl.textContent = q.q;
+    ansEl.innerHTML = "";
+    
+    // Đảo thứ tự đáp án cho mỗi câu hỏi (trừ câu Đúng/Sai)
+    const answersToShuffle = q.a.map((text, index) => ({ text, index }));
+    if (answersToShuffle.length > 2) { // Chỉ đảo nếu không phải câu Đúng/Sai
+        answersToShuffle.sort(() => Math.random() - 0.5);
+    }
+    
+    answersToShuffle.forEach(({ text, index }) => {
+        const div = document.createElement("div");
+        div.className = "answer";
+        div.textContent = text;
+        // Gắn index gốc để so sánh
+        div.addEventListener('click', () => checkAnswer(index, div)); 
+        ansEl.appendChild(div);
+    });
+}
+
+function checkAnswer(originalIndex, clickedElement) {
+    const q = questions[currentQ];
+    // Vô hiệu hóa tất cả các nút đáp án
+    Array.from(ansEl.children).forEach(btn => btn.onclick = null); // Remove old inline listeners if any
+    Array.from(ansEl.children).forEach(btn => btn.style.pointerEvents = 'none'); // Disable pointer events
+
+    const isCorrect = (originalIndex === q.correct);
+
+    if (isCorrect) {
+        resultText.textContent = "🎉 Chính xác tuyệt đối! (+10 điểm)";
+        score += 10;
+        currentScoreEl.textContent = `Điểm: ${score}`; // Cập nhật điểm ngay lập tức
+        clickedElement.style.backgroundColor = 'rgba(46, 204, 113, 0.5)';
+        clickedElement.style.borderColor = 'var(--correct-color)';
+
+    } else {
+        resultText.textContent = `❌ Sai rồi! Đáp án đúng là ${q.a[q.correct]}`;
+        clickedElement.style.backgroundColor = 'rgba(231, 76, 60, 0.5)';
+        clickedElement.style.borderColor = 'var(--wrong-color)';
+        
+        // Highlight correct answer
+        const correctAnswerElement = Array.from(ansEl.children).find(btn => btn.textContent === q.a[q.correct]);
+        if (correctAnswerElement) {
+            correctAnswerElement.style.backgroundColor = 'rgba(46, 204, 113, 0.5)';
+            correctAnswerElement.style.borderColor = 'var(--correct-color)';
+        }
+    }
+    
+    setTimeout(() => {
+        resultPopup.style.display = "flex";
+    }, 800);
+}
+
+function closeResultPopup() {
+    resultPopup.style.display = "none";
+    currentQ++;
+    if (currentQ >= questions.length) {
+        showEndScreen();
+    } else {
+        loadQuestion();
+    }
+}
+
+async function submitPlayerNameEnd() {
+    const playerName = playerNameInputEnd.value.trim() || currentPlayerName; 
+
+    // Vô hiệu hóa nút lưu để tránh spam
+    const saveButton = document.getElementById('saveScoreButton');
+    saveButton.disabled = true;
+    
+    if (firebaseInitialized) {
+        saveButton.textContent = "Đang lưu điểm (Firebase)...";
+        await saveScoreFirebase(playerName);
+    } else {
+        saveButton.textContent = "Đang lưu điểm (Cục bộ)...";
+        await saveScoreLocal(playerName, score);
+    }
+
+    // Bật lại nút và thông báo
+    saveButton.disabled = false;
+    saveButton.textContent = "Đã Lưu Điểm!";
+    showMessage(`Điểm số của ${playerName} đã được lưu!`, 'success');
+}
+
+
+// ===== Leaderboard & Storage Functions (Firebase & Local) =====
+const leaderboardList = document.getElementById("leaderboardList");
+
+function renderLeaderboard(data) {
+    leaderboardList.innerHTML = "";
+    if (data.length === 0) {
+        leaderboardList.innerHTML = "<li>Chưa có điểm nào được ghi.</li>";
+        return;
+    }
+    data.forEach((p, i) => {
+        const li = document.createElement("li");
+        const rank = i + 1;
+        li.innerHTML = `<span>#${rank}. ${p.name}</span> <span style="font-weight: bold; color: var(--primary-color);">${p.score}</span>`;
+        leaderboardList.appendChild(li);
+    });
+}
+
+// === LOCAL STORAGE (Dùng khi không có Firebase) ===
+
+function loadLocalLeaderboard() {
+    const data = localStorage.getItem('quiz_game_leaderboard');
+    let scores = data ? JSON.parse(data) : [];
+    
+    // Sắp xếp theo điểm và render top 10
+    scores.sort((a, b) => b.score - a.score);
+    renderLeaderboard(scores.slice(0, 10));
+}
+
+function saveScoreLocal(playerName, currentScore) {
+    const data = localStorage.getItem('quiz_game_leaderboard');
+    let scores = data ? JSON.parse(data) : [];
+    
+    scores.push({
+        name: playerName,
+        score: currentScore,
+        timestamp: Date.now()
+    });
+    
+    // Giữ lại 100 điểm cao nhất để tránh tràn bộ nhớ trình duyệt
+    scores.sort((a, b) => b.score - a.score);
+    scores = scores.slice(0, 100); 
+
+    localStorage.setItem('quiz_game_leaderboard', JSON.stringify(scores));
+    loadLocalLeaderboard(); // Tải lại và render bảng xếp hạng cục bộ
+}
+
+// === FIREBASE (Dùng khi Firebase hoạt động) ===
+
+async function saveScoreFirebase(playerName) {
+    if (!db || !isAuthReady) {
+        console.error("Firebase chưa sẵn sàng.");
+        return;
+    }
+    const collectionPath = `/artifacts/${appId}/public/data/leaderboard`;
+    const leaderboardRef = collection(db, collectionPath);
+
+    try {
+        await addDoc(leaderboardRef, {
+            name: playerName,
+            score: score,
+            userId: userId,
+            timestamp: serverTimestamp()
+        });
+        console.log("Đã lưu điểm thành công trên Firebase");
+    } catch (error) {
+        console.error("Lỗi khi lưu điểm lên Firebase:", error);
+        showMessage('Lỗi khi lưu điểm lên bảng xếp hạng toàn cầu.', 'error');
+    }
+}
+
+function listenToLeaderboard() {
+    if (!db || !isAuthReady) return;
+    const collectionPath = `/artifacts/${appId}/public/data/leaderboard`;
+    const leaderboardRef = collection(db, collectionPath);
+    // Sắp xếp theo score (điểm)
+    const q = query(leaderboardRef, orderBy("score", "desc"), limit(10));
+
+    onSnapshot(q, (snapshot) => {
+        const data = snapshot.docs.map(doc => doc.data());
+        renderLeaderboard(data);
+    }, (error) => {
+        console.error("Lỗi khi theo dõi bảng xếp hạng Firebase:", error);
+        showMessage('Không thể tải bảng xếp hạng toàn cầu.', 'error');
+        // Nếu lỗi Firebase, chuyển sang tải local tạm thời
+        loadLocalLeaderboard(); 
+    });
+}
+
+// ===== Event Listeners (Fixing ReferenceError) =====
+// Gắn các trình xử lý sự kiện vào các nút bằng JavaScript để tránh lỗi ReferenceError do module scoping.
+startButton.addEventListener('click', () => startGame(true));
+saveScoreButton.addEventListener('click', submitPlayerNameEnd);
+replayButton.addEventListener('click', () => startGame(true));
+homeButton.addEventListener('click', showStartScreen);
+continueButton.addEventListener('click', closeResultPopup);
+
+
+// Start the game by showing the initial screen
+window.onload = showStartScreen;
+
+</script>
